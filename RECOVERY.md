@@ -36,8 +36,17 @@
   restored to raw ASR; edited/moved text is not overwritten.
 - Added unit tests for WAV encoding, cleanup guards, private/password editors,
   provider request formats, API failure fallback and network cancellation.
-- Feature implementation awaits its first CI compile/test/lint. No live API or
-  physical-device tests have run; no API credentials have been requested or used.
+- First feature build (run 37556227980) compiled and generated an APK; all 20 new
+  unit tests passed. Its sole failing test was upstream ThemeSerializationTest's
+  stale assumption that version 2.0 does not migrate to current version 2.1.
+  The corrected test now checks the actual candidate-color migration.
+- A fresh installation now enables US keyboard and pinyin with pinyin as default,
+  regardless of device locale. Existing profiles/learning are left intact.
+- Added Android 16 emulator integration checks for native pinyin, installed IME
+  microphone entry, missing-key behavior, encrypted key storage, recording/cancel,
+  keyboard hiding and password fields. Reports/screenshots are CI artifacts.
+- No live API or physical-device tests have run; no real API credentials have
+  been requested or used.
 
 ## Required next steps
 

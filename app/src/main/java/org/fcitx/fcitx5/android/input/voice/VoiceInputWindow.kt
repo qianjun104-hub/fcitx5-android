@@ -42,6 +42,12 @@ class VoiceInputWindow : InputWindow.ExtendedInputWindow<VoiceInputWindow>() {
             setOnClickListener { InputFeedbacks.hapticFeedback(it); action() }
         }
         return LinearLayout(context).apply {
+            // A theme/orientation replacement can detach the entire InputView without
+            // asking InputWindowManager to remove this particular window.
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(view: View) { observe() }
+                override fun onViewDetachedFromWindow(view: View) { onDetached() }
+            })
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setBackgroundColor(theme.backgroundColor)
@@ -98,8 +104,14 @@ class VoiceInputWindow : InputWindow.ExtendedInputWindow<VoiceInputWindow>() {
     }
 
     override fun onAttached() {
-        observer = service.lifecycleScope.launch { service.aiVoice.state.collect { render(it) } }
+        observe()
         if (service.aiVoice.state.value.phase == VoicePhase.Idle) service.aiVoice.start()
+    }
+
+    private fun observe() {
+        if (observer?.isActive != true) {
+            observer = service.lifecycleScope.launch { service.aiVoice.state.collect { render(it) } }
+        }
     }
 
     override fun onDetached() { observer?.cancel(); observer = null; service.aiVoice.cancel() }
