@@ -53,6 +53,15 @@
   keyboard hiding and password fields. Reports/screenshots are CI artifacts.
 - No live API or physical-device tests have run; no real API credentials have
   been requested or used.
+- Verification run 37558042778 built the APK and Android test package; all 28
+  unit tests passed. Lint found upstream icon-tint and Japanese format-string
+  mistakes (fixed), plus incomplete translations. Only 266 missing translations
+  confirmed against the recovered upstream commit are recorded in lint-baseline.xml;
+  new lint errors remain fatal. The personal Chinese voice title is intentionally
+  not localized. Android 16 smoke found that Android's placeholder subtype
+  switched back to English after native initialization; its initial subtype now
+  points to pinyin. Explicit dynamic subtype choices remain available. Screenshots
+  use a shell diagnostic directory because UTP removes the test app after a run.
 
 ## Required next steps
 

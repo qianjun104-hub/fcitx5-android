@@ -5,7 +5,7 @@ set -euo pipefail
 collect_reports() {
   mkdir -p app/build/reports/ime-smoke
   adb logcat -d > app/build/reports/ime-smoke/logcat.txt || true
-  adb exec-out run-as org.fcitx.fcitx5.android.debug tar -cf - files/ime-smoke > app/build/reports/ime-smoke/screenshots.tar || true
+  adb pull /data/local/tmp/personal-ime-smoke app/build/reports/ime-smoke/screenshots || true
 }
 trap collect_reports EXIT
 adb logcat -c

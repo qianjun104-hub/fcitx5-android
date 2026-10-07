@@ -9,6 +9,8 @@
     tools:targetApi="30">
     <subtype
         android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeExtraValue="pinyin"
+        android:imeSubtypeLocale="zh_CN"
         android:imeSubtypeMode="keyboard"
         android:isAsciiCapable="true"
         android:label="@string/app_name"

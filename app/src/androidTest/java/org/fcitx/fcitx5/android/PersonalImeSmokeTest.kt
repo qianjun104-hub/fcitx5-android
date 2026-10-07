@@ -5,7 +5,6 @@ import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.UiAutomation
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.SystemClock
 import android.text.InputType
 import android.view.View
@@ -63,7 +62,7 @@ class PersonalImeSmokeTest {
                 withTimeout(30_000) {
                     fcitx.runOnReady {
                         assertEquals(listOf("keyboard-us", "pinyin"), enabledIme().map { it.uniqueName })
-                        assertEquals("pinyin", currentIme().uniqueName)
+                        while (currentIme().uniqueName != "pinyin") delay(100)
                         for (letter in "nihaoshijie") { sendKey(letter); delay(70) }
                         while (getCandidates(0, 1).firstOrNull()?.text != "你好世界") delay(100)
                         assertTrue(select(0))
@@ -178,10 +177,9 @@ class PersonalImeSmokeTest {
     }
 
     private fun screenshot(name: String) {
-        val directory = File(context.filesDir, "ime-smoke").apply { mkdirs() }
-        ui.takeScreenshot()?.let { bitmap ->
-            File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            bitmap.recycle()
-        }
+        // UTP uninstalls the target APK after instrumentation; internal/external
+        // app directories are removed before the workflow can collect them.
+        shell("mkdir -p /data/local/tmp/personal-ime-smoke")
+        shell("screencap -p /data/local/tmp/personal-ime-smoke/$name.png")
     }
 }

@@ -56,6 +56,11 @@ android {
         @Suppress("UnstableApiUsage")
         generateLocaleConfig = true
     }
+
+    lint {
+        // Only inherited missing translations are baselined; new/runtime issues fail CI.
+        baseline = file("lint-baseline.xml")
+    }
 }
 
 fcitxComponent {
