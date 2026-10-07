@@ -61,7 +61,10 @@ object ConservativeCleanup {
         return restored
     }
 
-    private fun letters(text: String) = text.filter { it.isLetterOrDigit() }
+    private const val EDITABLE_PUNCTUATION = ".,!?;:'\"，。！？；：、（）()[]【】《》〈〉「」『』“”‘’…"
+
+    // Preserve symbols too: an added emoji/markdown decoration is not punctuation.
+    private fun letters(text: String) = text.filterNot { it.isWhitespace() || it in EDITABLE_PUNCTUATION }
 
     private fun onlySafeDeletions(original: String, cleaned: String): Boolean {
         // "额" means forehead and "然后" describes sequence; neither is a safe filler.

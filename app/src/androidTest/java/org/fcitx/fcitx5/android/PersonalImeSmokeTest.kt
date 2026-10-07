@@ -122,6 +122,25 @@ class PersonalImeSmokeTest {
             assertNull("Cloud voice entry must be absent in a password field",
                 imeNode { it.contentDescription?.toString() == "中文 AI 语音" })
             screenshot("04-password-field")
+
+            // The ordinary in-app test editor shares the IME's UID. Use a separate
+            // process/UID to verify Android's while-in-use microphone behavior.
+            val testPackage = instrumentation.context.packageName
+            assertNotEquals(context.packageName, testPackage)
+            shell("am start -n $testPackage/org.fcitx.fcitx5.android.smoke.ExternalEditorActivity")
+            await("IME opens in the independent host application") {
+                ui.windows.any { findNode(it.root) { node -> node.contentDescription?.toString() == "external-smoke-editor" } != null } &&
+                    imeNode { it.contentDescription?.toString() == "中文 AI 语音" } != null
+            }
+            click { it.contentDescription?.toString() == "中文 AI 语音" }
+            await("The IME can record while another app owns the foreground activity") {
+                imeNode { it.text?.toString() == "停止并识别" } != null
+            }
+            screenshot("05-recording-in-another-app")
+            shell("input keyevent KEYCODE_HOME")
+            await("Leaving the external editor hides and cancels the voice window") {
+                ui.windows.none { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+            }
         } catch (failure: Throwable) {
             runCatching { screenshot("failure") }
             throw failure

@@ -62,6 +62,11 @@
   switched back to English after native initialization; its initial subtype now
   points to pinyin. Explicit dynamic subtype choices remain available. Screenshots
   use a shell diagnostic directory because UTP removes the test app after a run.
+- Expanded installed-IME recording verification to an independent test APK's
+  foreground editor (different process and UID). In-app recording alone cannot
+  verify Android microphone access while another app is foreground.
+- Cleanup also rejects newly added emoji/markdown symbols; only ordinary
+  punctuation/whitespace edits are exempt from content preservation.
 
 ## Required next steps
 

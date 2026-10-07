@@ -87,4 +87,11 @@ class ConservativeCleanupTest {
             assertNull(symbol, ConservativeCleanup.restoreIfSafe(p, p.masked.replace(marker, "")))
         }
     }
+
+    @Test fun addedEmojiAndFormattingCannotBeMistakenForPunctuation() {
+        val p = ConservativeCleanup.protect("今天复查血常规", "")
+        assertEquals("今天，复查血常规。", ConservativeCleanup.restoreIfSafe(p, "今天，复查血常规。"))
+        for (response in listOf("✅今天复查血常规。", "**今天复查血常规**", "今天复查血常规🙂"))
+            assertNull(response, ConservativeCleanup.restoreIfSafe(p, response))
+    }
 }
