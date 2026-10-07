@@ -64,8 +64,14 @@ class PersonalImeSmokeTest {
                         assertEquals(listOf("keyboard-us", "pinyin"), enabledIme().map { it.uniqueName })
                         while (currentIme().uniqueName != "pinyin") delay(100)
                         for (letter in "nihaoshijie") { sendKey(letter); delay(70) }
-                        while (getCandidates(0, 1).firstOrNull()?.text != "你好世界") delay(100)
-                        assertTrue(select(0))
+                        // Native dictionaries and learned frequencies determine rank.
+                        // Validate the actual Chinese candidate without fixing its index.
+                        var candidateIndex = -1
+                        while (candidateIndex < 0) {
+                            candidateIndex = getCandidates(0, 20).indexOfFirst { it.text == "你好世界" }
+                            if (candidateIndex < 0) delay(100)
+                        }
+                        assertTrue(select(candidateIndex))
                     }
                 }
             }

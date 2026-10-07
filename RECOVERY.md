@@ -67,6 +67,10 @@
   verify Android microphone access while another app is foreground.
 - Cleanup also rejects newly added emoji/markdown symbols; only ordinary
   punctuation/whitespace edits are exempt from content preservation.
+- Run 37559405586 passed APK build, all 28 unit tests and lint. Android 16
+  screenshots confirmed pinyin was active and offered the correct Chinese phrase;
+  the smoke test incorrectly assumed it was the first candidate. It now selects
+  the candidate by text, leaving native ranking and learning unchanged.
 
 ## Required next steps
 
