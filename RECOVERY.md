@@ -41,7 +41,13 @@
   stale assumption that version 2.0 does not migrate to current version 2.1.
   The corrected test now checks the actual candidate-color migration.
 - A fresh installation now enables US keyboard and pinyin with pinyin as default,
-  regardless of device locale. Existing profiles/learning are left intact.
+  and activates Chinese mode on first focus, regardless of device locale.
+  Existing profiles/learning are left intact.
+- Tightened cleanup: omitted symptoms/plans are rejected, not just added words.
+  Deletion is limited to unambiguous fillers and adjacent repeated phrases; units,
+  temperature, percent and laboratory sign symbols are protected too.
+- Key entry uses a non-restoring password dialog so a rotation cannot put the
+  plaintext key into EditTextPreferenceDialogFragment's saved-state Bundle.
 - Added Android 16 emulator integration checks for native pinyin, installed IME
   microphone entry, missing-key behavior, encrypted key storage, recording/cancel,
   keyboard hiding and password fields. Reports/screenshots are CI artifacts.

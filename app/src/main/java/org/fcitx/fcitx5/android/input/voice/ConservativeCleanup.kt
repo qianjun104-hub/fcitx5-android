@@ -8,6 +8,7 @@ object ConservativeCleanup {
     private val number = "[<>≤≥＋+\\-−]?\\s*\\d+(?:[.．]\\d+)?(?:\\s*[/～~\\-—至]\\s*\\d+(?:[.．]\\d+)?)?"
     private val latin = "[A-Za-z][A-Za-z0-9._+\\-/]*"
     private val chineseNumber = "[零〇一二两三四五六七八九十百千万亿]+"
+    private val clinicalSymbol = "℃|℉|°[CF]|[%％‰²³±=×÷^<>≤≥]|[+＋−-]+"
     private val qualifiers = listOf(
         "左侧", "右侧", "双侧", "左", "右", "双", "阴性", "阳性", "阴", "阳",
         "没有", "未见", "否认", "不能", "不要", "不", "未", "无", "非",
@@ -20,7 +21,7 @@ object ConservativeCleanup {
         val terms = glossary.split(',', '，', ';', '；', '\n')
             .map(String::trim).filter(String::isNotEmpty).filter { it.length <= 80 }.take(200)
         val fixed = (terms + qualifiers).distinct().sortedByDescending(String::length).map(Regex::escape)
-        val matcher = Regex((fixed + number + latin + chineseNumber).joinToString("|"))
+        val matcher = Regex((fixed + number + latin + chineseNumber + clinicalSymbol).joinToString("|"))
         val nonce = UUID.randomUUID().toString().take(8)
         val tokens = mutableListOf<Pair<String, String>>()
         val masked = matcher.replace(source) { match ->
@@ -50,12 +51,37 @@ object ConservativeCleanup {
             if (at < 0) return null
             at++
         }
+        // A subsequence alone still allows omission of an entire symptom or plan.
+        // Only unmistakable fillers and an immediately repeated phrase may disappear.
+        if (!onlySafeDeletions(originalLetters, cleanedLetters)) return null
         // Compare critical facts again after unmasking, including newly added tokens.
-        val critical = Regex(listOf(number, latin, chineseNumber, qualifiers.sortedByDescending(String::length).joinToString("|", transform = Regex::escape)).joinToString("|"))
+        val critical = Regex(listOf(number, latin, chineseNumber, clinicalSymbol, qualifiers.sortedByDescending(String::length).joinToString("|", transform = Regex::escape)).joinToString("|"))
         fun facts(text: String) = critical.findAll(text).map { it.value.filterNot(Char::isWhitespace) }.toList()
         if (facts(protected.source) != facts(restored)) return null
         return restored
     }
 
     private fun letters(text: String) = text.filter { it.isLetterOrDigit() }
+
+    private fun onlySafeDeletions(original: String, cleaned: String): Boolean {
+        // "额" means forehead and "然后" describes sequence; neither is a safe filler.
+        fun withoutFillers(text: String) = text.filterNot { it in "嗯呃唔" }
+        val source = withoutFillers(original)
+        val result = withoutFillers(cleaned)
+        fun repeated(start: Int, end: Int): Boolean {
+            val length = end - start
+            if (length == 0) return true
+            if (length < 2) return false
+            val removed = source.substring(start, end)
+            return (start >= length && source.substring(start - length, start) == removed) ||
+                (end + length <= source.length && source.substring(end, end + length) == removed)
+        }
+        var at = 0
+        for (character in result) {
+            val next = source.indexOf(character, at)
+            if (next < 0 || !repeated(at, next)) return false
+            at = next + 1
+        }
+        return repeated(at, source.length)
+    }
 }

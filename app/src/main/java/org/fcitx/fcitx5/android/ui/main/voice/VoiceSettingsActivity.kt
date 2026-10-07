@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -175,30 +176,32 @@ class VoiceSettingsFragment : PaddingPreferenceFragment() {
     }
 
     private fun PreferenceCategory.addKey(name: String, label: String) {
-        addPreference(EditTextPreference(context).apply {
+        addPreference(Preference(context).apply {
             key = "voice_${name}_key"
             title = label
             isPersistent = false
-            text = ""
             summary = if (prefs.hasKey(name)) "已加密保存；留空可保留现有密钥" else "未保存；留空可保留现有密钥"
-            setOnBindEditTextListener {
-                it.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                it.isSaveEnabled = false
-                it.imeOptions = it.imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-                if (Build.VERSION.SDK_INT >= 26) it.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
-                it.setText("")
-            }
-            setOnPreferenceChangeListener { _, value ->
-                try {
-                    val str = value.toString().trim()
-                    if (str.isNotBlank()) prefs.saveKey(name, str)
-                    summary = if (prefs.hasKey(name)) "已加密保存；留空可保留现有密钥" else "未保存"
-                    // Never retain a key in EditTextPreference state or dialog restoration.
-                    false
-                } catch (_: Exception) {
-                    android.widget.Toast.makeText(context, "密钥保存失败，请重试", android.widget.Toast.LENGTH_SHORT).show()
-                    false
+            // EditTextPreferenceDialogFragment explicitly saves its text in a Bundle,
+            // even when the underlying EditText has isSaveEnabled=false.
+            setOnPreferenceClickListener {
+                val field = EditText(requireContext()).apply {
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    isSingleLine = true
+                    isSaveEnabled = false
+                    imeOptions = imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                    if (Build.VERSION.SDK_INT >= 26) importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
                 }
+                MaterialAlertDialogBuilder(requireContext()).setTitle(label).setView(field)
+                    .setNegativeButton("取消", null).setPositiveButton("保存") { _, _ ->
+                        try {
+                            val str = field.text.toString().trim()
+                            if (str.isNotBlank()) prefs.saveKey(name, str)
+                            summary = if (prefs.hasKey(name)) "已加密保存；留空可保留现有密钥" else "未保存"
+                        } catch (_: Exception) {
+                            android.widget.Toast.makeText(context, "密钥保存失败，请重试", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }.setOnDismissListener { field.text.clear() }.show()
+                true
             }
         })
     }

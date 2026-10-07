@@ -200,6 +200,10 @@ public:
         group.setDefaultInputMethod("pinyin");
         imMgr.setGroup(std::move(group));
         imMgr.save();
+        // Fcitx otherwise starts in its inactive (US keyboard) mode on first focus.
+        fcitx::RawConfig initialSettings;
+        initialSettings.setValueByPath("Behavior/ActiveByDefault", "True");
+        setGlobalConfig(initialSettings);
         return true;
     }
 

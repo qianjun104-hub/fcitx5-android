@@ -59,4 +59,32 @@ class ConservativeCleanupTest {
         val p = ConservativeCleanup.protect("TFCC和C++都保留", "TFCC，TFCC，C++")
         assertEquals(p.source, ConservativeCleanup.restoreIfSafe(p, p.masked))
     }
+
+    @Test fun omissionOfUnlistedSymptomsAndPlansIsRejected() {
+        for ((original, shortened) in listOf(
+            "患者发热需要复查血常规" to "患者需要复查血常规",
+            "患者需要复查血常规并且请示上级" to "患者需要复查血常规",
+            "先复查血常规然后给上级汇报" to "先复查血常规给上级汇报",
+            "患者额部有伤口需要换药" to "患者部有伤口需要换药"
+        )) {
+            val p = ConservativeCleanup.protect(original, "")
+            assertNull(original, ConservativeCleanup.restoreIfSafe(p, shortened))
+        }
+    }
+
+    @Test fun adjacentWholePhraseRepetitionCanBeRemoved() {
+        val p = ConservativeCleanup.protect("嗯患者需要患者需要复查血常规", "")
+        assertEquals("患者需要复查血常规。", ConservativeCleanup.restoreIfSafe(p, "患者需要复查血常规。"))
+        val single = ConservativeCleanup.protect("患者咳咳血需要复查", "")
+        assertNull(ConservativeCleanup.restoreIfSafe(single, "患者咳血需要复查"))
+    }
+
+    @Test fun temperaturePercentAndLabResultSymbolsCannotDisappear() {
+        val p = ConservativeCleanup.protect("体温39.5℃氧饱和度95%尿蛋白++", "")
+        assertEquals(p.source + "。", ConservativeCleanup.restoreIfSafe(p, p.masked + "。"))
+        for (symbol in listOf("℃", "%", "++")) {
+            val marker = p.tokens.first { it.second == symbol }.first
+            assertNull(symbol, ConservativeCleanup.restoreIfSafe(p, p.masked.replace(marker, "")))
+        }
+    }
 }
