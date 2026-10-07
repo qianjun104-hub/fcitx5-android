@@ -19,6 +19,7 @@ import androidx.preference.PreferenceCategory
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.ui.common.PaddingPreferenceFragment
 import org.fcitx.fcitx5.android.ui.main.settings.SettingsRoute
+import org.fcitx.fcitx5.android.ui.main.voice.VoiceSettingsActivity
 import org.fcitx.fcitx5.android.utils.Const
 import org.fcitx.fcitx5.android.utils.addCategory
 import org.fcitx.fcitx5.android.utils.addPreference
@@ -66,6 +67,11 @@ class MainFragment : PaddingPreferenceFragment() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()).apply {
+            addCategory("个人 AI 输入") {
+                addPreference(R.string.ai_voice_title, icon = R.drawable.ic_baseline_keyboard_voice_24) {
+                    startActivity(Intent(requireContext(), VoiceSettingsActivity::class.java))
+                }
+            }
             addCategory("Fcitx") {
                 addDestinationPreference(
                     R.string.global_options,

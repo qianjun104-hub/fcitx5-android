@@ -21,19 +21,31 @@
 
 - Development branch: `work/personal-ai-ime`.
 - Added CI that builds an arm64 APK, runs unit tests and lint, and uploads reports.
-- Read the current Gradle/native build configuration, service lifecycle and
-  toolbar integration. The upstream microphone invokes Android speech recognition;
-  user-configured ASR and conservative AI cleanup are not yet integrated.
+  First baseline run failed because setup-android's default obsolete `tools`
+  package no longer exists; specifying `platform-tools` fixes that setup failure.
+- Implemented native keyboard voice window, Chinese settings/test activities,
+  microphone permission flow, independent configurable ASR/text endpoints and
+  model IDs, encrypted Keystore-backed keys excluded from backup, and 16 kHz WAV.
+- ASR supports OpenRouter JSON and OpenAI-compatible multipart. Cleanup masks
+  numbers, medical glossary terms, abbreviations and clinical qualifiers, rejects
+  new/reordered words, and falls back to raw ASR on errors/truncation/rejection.
+  This rejection gate does not prove that a model preserved every fact.
+- Async insertion is bound to the same editor session, selection and surrounding
+  anchor text. Cancellation on editor changes/hiding aborts HTTP requests and
+  releases/erases bounded recording buffers. Exact unchanged insertions can be
+  restored to raw ASR; edited/moved text is not overwritten.
+- Added unit tests for WAV encoding, cleanup guards, private/password editors,
+  provider request formats, API failure fallback and network cancellation.
+- Feature implementation awaits its first CI compile/test/lint. No live API or
+  physical-device tests have run; no API credentials have been requested or used.
 
 ## Required next steps
 
-1. Add encrypted local ASR/text-provider settings and microphone permission flow.
-2. Integrate bounded audio capture and cancellable ASR/cleanup in the existing IME.
-3. Preserve numbers, abbreviations and medical terms; fall back to raw ASR on
-   cleanup failure or rejected transformation. Provide safe original restoration.
-4. Cancel on editor changes/hiding; reject password and no-personal-learning fields;
-   never insert an asynchronous result into a different editor.
-5. Inspect CI failures, fix and push checkpoints. Verify API calls on a device only
+1. Compile/test/lint the feature, inspect any failures, fix and push checkpoints.
+2. Inspect first-use pinyin defaults and preserve existing native learning.
+3. Verify recording, permission flow, cross-app insertion, restore and haptics on
+   an Android device/emulator; confirm keyboard pane lifecycle compatibility.
+4. Verify API calls on a device only
    once the user configures their own credentials; do not put keys in Git or logs.
 
 ## Resuming

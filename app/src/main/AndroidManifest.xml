@@ -12,6 +12,9 @@
         tools:node="remove" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- remove intent queries merged from library manifest (namely Android-Image-Cropper) -->
@@ -47,6 +50,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FcitxAppTheme"
         tools:targetApi="33">
+        <activity android:name=".ui.main.voice.VoiceSettingsActivity" android:exported="false" android:label="@string/ai_voice_title" />
+        <activity android:name=".ui.main.voice.VoicePermissionActivity" android:exported="false" android:label="@string/ai_voice_title" />
+        <activity android:name=".ui.main.voice.VoiceTestActivity" android:exported="false" android:label="@string/ai_voice_title" />
         <activity
             android:name=".ui.setup.SetupActivity"
             android:exported="false"
