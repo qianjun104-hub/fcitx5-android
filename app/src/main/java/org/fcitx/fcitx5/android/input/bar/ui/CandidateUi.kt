@@ -25,15 +25,27 @@ class CandidateUi(override val ctx: Context, theme: Theme, private val horizonta
         visibility = View.INVISIBLE
     }
 
+    // Prediction candidates can remain after a commit. Voice input must stay
+    // reachable in this state, independently of the candidate expansion control.
+    val voiceButton = ToolButton(ctx, R.drawable.ic_baseline_keyboard_voice_24, theme).apply {
+        id = View.generateViewId()
+        contentDescription = ctx.getString(R.string.ai_voice_title)
+        visibility = View.GONE
+    }
+
     override val root = ctx.constraintLayout {
         add(expandButton, lParams(dp(40)) {
             centerVertically()
             endOfParent()
         })
+        add(voiceButton, lParams(dp(40)) {
+            centerVertically()
+            before(expandButton)
+        })
         add(horizontalView, lParams {
             centerVertically()
             startOfParent()
-            before(expandButton)
+            before(voiceButton)
         })
     }
 }

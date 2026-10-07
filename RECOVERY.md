@@ -71,6 +71,10 @@
   screenshots confirmed pinyin was active and offered the correct Chinese phrase;
   the smoke test incorrectly assumed it was the first candidate. It now selects
   the candidate by text, leaving native ranking and learning unchanged.
+- Run 37560604221 passed APK build, all 29 unit tests and lint. Its installed-IME
+  test successfully committed Chinese text, then exposed a real toolbar bug:
+  native prediction candidates hid the idle toolbar's microphone. CandidateUi
+  now has its own eligible-editor voice button alongside the expand control.
 
 ## Required next steps
 

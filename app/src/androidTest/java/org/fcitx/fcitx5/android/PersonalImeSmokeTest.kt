@@ -80,6 +80,9 @@ class PersonalImeSmokeTest {
                 instrumentation.runOnMainSync { text = editor.text.toString() }
                 text == "你好世界"
             }
+            await("AI microphone stays reachable after native prediction candidates appear") {
+                imeNode { it.contentDescription?.toString() == "中文 AI 语音" } != null
+            }
             screenshot("01-native-chinese-keyboard")
 
             click { it.contentDescription?.toString() == "中文 AI 语音" }

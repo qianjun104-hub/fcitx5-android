@@ -337,6 +337,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private val candidateUi by lazy {
         CandidateUi(context, theme, horizontalCandidate.view).apply {
+            voiceButton.setOnClickListener { service.showAiVoiceInput() }
             expandButton.apply {
                 swipeEnabled = true
                 swipeThresholdY = dp(HEIGHT.toFloat())
@@ -454,6 +455,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             else if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback
         )
         if (shouldShowAiVoice) idleUi.hideKeyboardButton.contentDescription = context.getString(R.string.ai_voice_title)
+        candidateUi.voiceButton.visibility = if (shouldShowAiVoice) View.VISIBLE else View.GONE
         evalIdleUiState()
     }
 
