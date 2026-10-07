@@ -118,10 +118,14 @@ class AndroidAppConventionPlugin : AndroidBaseConventionPlugin() {
                 val variantName = v.name.capitalized()
                 // Evaluation should be delayed as we need be able to see other tasks
                 target.afterEvaluate {
-                    tasks.findByName(DataDescriptorPlugin.TASK)?.also {
-                        tasks.findByName("merge${variantName}Assets")?.dependsOn(it)
-                        tasks.findByName("lintVitalAnalyzeRelease")?.dependsOn(it)
-                        tasks.findByName("generateReleaseLintVitalReportModel")?.dependsOn(it)
+                    tasks.findByName(DataDescriptorPlugin.TASK)?.also { descriptor ->
+                        tasks.findByName("merge${variantName}Assets")?.dependsOn(descriptor)
+                        // Lint writers and analyzers also read generated main assets.
+                        // Include debug/test models, not just release-vital lint.
+                        tasks.matching { task ->
+                            task.name.startsWith("lint") ||
+                                (task.name.startsWith("generate") && task.name.contains("Lint"))
+                        }.configureEach { dependsOn(descriptor) }
                     }
                 }
             }

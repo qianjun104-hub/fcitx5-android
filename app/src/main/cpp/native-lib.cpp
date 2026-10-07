@@ -187,6 +187,26 @@ public:
         imMgr.save();
     }
 
+    // Applied once to a fresh installation, independently of the phone's locale.
+    bool initializePersonalChineseProfile() {
+        auto &imMgr = p_instance->inputMethodManager();
+        if (!imMgr.entry("pinyin") || !imMgr.entry("keyboard-us")) {
+            return false;
+        }
+        fcitx::InputMethodGroup group(imMgr.currentGroup().name());
+        group.setDefaultLayout("us");
+        group.inputMethodList().emplace_back("keyboard-us");
+        group.inputMethodList().emplace_back("pinyin");
+        group.setDefaultInputMethod("pinyin");
+        imMgr.setGroup(std::move(group));
+        imMgr.save();
+        // Fcitx otherwise starts in its inactive (US keyboard) mode on first focus.
+        fcitx::RawConfig initialSettings;
+        initialSettings.setValueByPath("Behavior/ActiveByDefault", "True");
+        setGlobalConfig(initialSettings);
+        return true;
+    }
+
     static fcitx::RawConfig mergeConfigDesc(const fcitx::Configuration &conf) {
         fcitx::RawConfig topLevel;
         auto cfg = topLevel.get("cfg", true);
@@ -878,6 +898,13 @@ Java_org_fcitx_fcitx5_android_core_Fcitx_setEnabledInputMethods(JNIEnv *env, jcl
         entries.emplace_back(CString(env, string));
     }
     Fcitx::Instance().setEnabledInputMethods(entries);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_org_fcitx_fcitx5_android_core_Fcitx_initializePersonalChineseProfile(JNIEnv *env, jclass clazz) {
+    RETURN_VALUE_IF_NOT_RUNNING(JNI_FALSE)
+    return Fcitx::Instance().initializePersonalChineseProfile() ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"

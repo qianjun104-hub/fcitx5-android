@@ -65,6 +65,8 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
+import org.fcitx.fcitx5.android.input.voice.VoiceController
+import org.fcitx.fcitx5.android.input.voice.VoiceEditorPolicy
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
@@ -101,6 +103,46 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private lateinit var contentView: FrameLayout
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
+
+    private var voiceController: VoiceController? = null
+    val aiVoice: VoiceController
+        get() = voiceController ?: VoiceController(this).also { voiceController = it }
+    var voiceSession: Long = 0
+        private set
+
+    fun allowsCloudVoice(): Boolean {
+        val info = currentInputEditorInfo ?: return false
+        return isInputViewShown && VoiceEditorPolicy.allowsCloud(info.inputType, info.imeOptions)
+    }
+
+    fun hasVoiceComposingText() = composing.isNotEmpty()
+
+    fun showAiVoiceInput() { inputView?.showAiVoiceInput() }
+
+    fun commitVoiceText(text: String): Boolean {
+        if (!allowsCloudVoice() || composing.isNotEmpty()) return false
+        val connection = currentInputConnection ?: return false
+        val start = selection.latest.start
+        val end = selection.latest.end
+        selection.predict(start + text.length)
+        if (connection.commitText(text, 1)) return true
+        selection.resetTo(start, end)
+        return false
+    }
+
+    fun replaceVoiceText(start: Int, end: Int, text: String): Boolean {
+        if (!allowsCloudVoice() || composing.isNotEmpty()) return false
+        val connection = currentInputConnection ?: return false
+        var success = false
+        connection.withBatchEdit {
+            if (setSelection(start, end)) {
+                selection.predict(start + text.length)
+                success = commitText(text, 1)
+                if (!success) { setSelection(end, end); selection.resetTo(end) }
+            }
+        }
+        return success
+    }
 
     private val navbarMgr = NavigationBarManager()
     private val inputDeviceMgr = InputDeviceManager { isVirtualKeyboard ->
@@ -148,6 +190,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     )
 
     private fun replaceInputView(theme: Theme): InputView {
+        voiceController?.cancel()
         val newInputView = InputView(this, fcitx, theme)
         setInputView(newInputView)
         inputDeviceMgr.setInputView(newInputView)
@@ -725,6 +768,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+        voiceSession++
+        voiceController?.cancel()
         // update selection as soon as possible
         // sometimes when restarting input, onUpdateSelection happens before onStartInput, and
         // initialSel{Start,End} is outdated. but it's the client app's responsibility to send
@@ -1048,6 +1093,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        voiceSession++
+        voiceController?.cancel()
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
         decorLocationUpdated = false
         inputDeviceMgr.onFinishInputView()
@@ -1064,6 +1111,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onFinishInput() {
+        voiceSession++
+        voiceController?.cancel()
         Timber.d("onFinishInput")
         postFcitxJob {
             focus(false)
@@ -1072,6 +1121,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onUnbindInput() {
+        voiceSession++
+        voiceController?.cancel()
         cachedKeyEvents.evictAll()
         cachedKeyEventIndex = 0
         cursorUpdateIndex = 0
@@ -1084,6 +1135,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onDestroy() {
+        voiceController?.cancel()
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
         }

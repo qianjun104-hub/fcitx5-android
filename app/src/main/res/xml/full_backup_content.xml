@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
+    <exclude domain="sharedpref" path="personal_voice_secrets.xml" />
+    <exclude domain="sharedpref" path="personal_voice_settings.xml" />
     <exclude
         domain="file"
         path="usr" />

@@ -306,6 +306,9 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
         external fun setEnabledInputMethods(array: Array<String>)
 
         @JvmStatic
+        external fun initializePersonalChineseProfile(): Boolean
+
+        @JvmStatic
         external fun getFcitxGlobalConfig(): RawConfig?
 
         @JvmStatic
@@ -402,9 +405,7 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
         }
 
         // will be called in fcitx main thread
-        private fun onFirstRun() {
-            Timber.i("onFirstRun")
-        }
+        private fun onFirstRun(): Boolean = initializePersonalChineseProfile()
 
         /**
          * register a [FcitxEvent] handler that will fire before events go into [eventFlow_]
@@ -501,11 +502,12 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
 
     private fun handleFirstRunReadyEvent(event: FcitxEvent<*>) {
         if (event is FcitxEvent.ReadyEvent && firstRun) {
-            firstRun = false
             // this method runs in same thread with `startupFcitx`
             // block it will also block fcitx
-            onFirstRun()
-            unregisterFcitxEventHandler(::handleFirstRunReadyEvent)
+            if (onFirstRun()) {
+                firstRun = false
+                unregisterFcitxEventHandler(::handleFirstRunReadyEvent)
+            } else Timber.w("Chinese input data unavailable; first-run setup will retry")
         }
     }
 

@@ -1,0 +1,95 @@
+name: Personal Chinese AI IME
+
+on:
+  push:
+    branches: [master, 'work/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-ime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y extra-cmake-modules gettext
+          sdkmanager 'platforms;android-36' 'build-tools;36.1.0' 'ndk;28.0.13004108' 'cmake;3.31.6'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build, test and lint arm64 IME
+        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug -PbuildABI=arm64-v8a --stacktrace
+      - name: Upload installable APK and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-chinese-ai-ime-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/build-metadata*.json
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.*
+          if-no-files-found: warn
+
+  android-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install native build dependencies and enable KVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y extra-cmake-modules gettext
+          sdkmanager 'platforms;android-36' 'build-tools;36.1.0' 'ndk;28.0.13004108' 'cmake;3.31.6'
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build installed-IME instrumentation test
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest -PbuildABI=x86_64 --stacktrace
+      - name: Exercise Chinese keyboard and voice lifecycle on Android 16
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: bash .github/scripts/android-smoke.sh
+      - name: Upload Android test reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-ime-android-smoke-${{ github.sha }}
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/reports/ime-smoke/
+          if-no-files-found: warn

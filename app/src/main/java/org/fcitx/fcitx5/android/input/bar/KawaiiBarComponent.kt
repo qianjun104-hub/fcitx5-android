@@ -66,6 +66,8 @@ import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
+import org.fcitx.fcitx5.android.input.voice.VoicePreferences
+import org.fcitx.fcitx5.android.input.voice.VoiceEditorPolicy
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.mechdancer.dependency.DynamicScope
@@ -335,6 +337,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private val candidateUi by lazy {
         CandidateUi(context, theme, horizontalCandidate.view).apply {
+            voiceButton.setOnClickListener { service.showAiVoiceInput() }
             expandButton.apply {
                 swipeEnabled = true
                 swipeThresholdY = dp(HEIGHT.toFloat())
@@ -444,10 +447,15 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         voiceInputSubtype = InputMethodUtil.findVoiceSubtype(preferredVoiceInput)
         val shouldShowVoiceInput =
             showVoiceInputButton && voiceInputSubtype != null && !capFlags.has(CapabilityFlag.Password)
+        val shouldShowAiVoice = VoicePreferences(context).enabled &&
+            VoiceEditorPolicy.allowsCloud(info.inputType, info.imeOptions)
         idleUi.setHideKeyboardIsVoiceInput(
-            shouldShowVoiceInput,
-            if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback
+            shouldShowAiVoice || shouldShowVoiceInput,
+            if (shouldShowAiVoice) View.OnClickListener { service.showAiVoiceInput() }
+            else if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback
         )
+        if (shouldShowAiVoice) idleUi.hideKeyboardButton.contentDescription = context.getString(R.string.ai_voice_title)
+        candidateUi.voiceButton.visibility = if (shouldShowAiVoice) View.VISIBLE else View.GONE
         evalIdleUiState()
     }
 
